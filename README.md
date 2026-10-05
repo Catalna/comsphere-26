@@ -4,7 +4,14 @@ DanaTerang is an evidence-first accountability platform for funded programs. Thi
 
 ## Development
 
-Requirements: Node.js 20+ and npm 10+.
+Requirements: Node.js 20.9+ and npm 10+.
+
+Install browser-test prerequisites once before running the full workspace suite:
+
+```sh
+python -m pip install -r apps/web/requirements-test.txt
+python -m playwright install chromium
+```
 
 ```sh
 npm install

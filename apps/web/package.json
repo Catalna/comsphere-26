@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "python tests/run_browser_test.py"
   },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "5.3.0",
