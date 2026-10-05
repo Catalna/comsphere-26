@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+out/
+*.tsbuildinfo
+playwright-report/
+test-results/
+coverage/
+.env
+.env.*
+!.env.example
+npm-debug.log*

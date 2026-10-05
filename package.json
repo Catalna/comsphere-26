@@ -1,0 +1,19 @@
+{
+  "name": "dana-terang",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "dev:api": "npm run dev --workspace @dana-terang/api",
+    "dev:web": "npm run dev --workspace @dana-terang/web",
+    "build": "npm run build --workspaces --if-present"
+  }
+}

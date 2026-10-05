@@ -1,0 +1,16 @@
+{
+  "name": "@dana-terang/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "5.2.1"
+  },
+  "devDependencies": {
+    "supertest": "7.3.1"
+  }
+}
