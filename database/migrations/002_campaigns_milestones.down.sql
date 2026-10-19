@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS milestones;
+DROP TABLE IF EXISTS campaigns;

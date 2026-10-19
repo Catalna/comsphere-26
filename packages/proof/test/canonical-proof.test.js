@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { hashProofPackage, hashRawEvidence } from "../src/index.js";
+import { hashProofPackage, hashRawEvidence, normalizeProofPackage } from "../src/index.js";
 
 const fixture = {
   schemaVersion: 1,
@@ -124,4 +124,121 @@ test("rejects oversized proof packages and metadata strings", () => {
   const tooLongVendor = structuredClone(fixture);
   tooLongVendor.files[0].ocr.vendor.value = "x".repeat(4097);
   assert.throws(() => hashProofPackage(tooLongVendor));
+});
+
+const quorumFixture = {
+  schemaVersion: 2,
+  campaignId: "opaque-campaign-id",
+  milestoneId: "opaque-milestone-id",
+  evidenceVersion: 1,
+  createdAt: "2026-10-05T09:00:00.000Z",
+  quorum: {
+    reviewRef: "0x" + "a".repeat(64),
+    roundNumber: 1,
+    decision: "VERIFIED",
+    contractAddress: "0x" + "b".repeat(40),
+    transactionHash: "0x" + "c".repeat(64),
+    blockNumber: 5_432_100,
+  },
+  files: [
+    {
+      evidenceId: "opaque-evidence-id",
+      evidenceType: "RECEIPT",
+      rawHash: "0".repeat(64),
+      redactedHash: null,
+      ocr: {
+        language: "id",
+        vendor: { value: "Example Store", confidence: 94 },
+        documentDate: { value: "2026-10-01", confidence: 89 },
+        amount: { value: "30000000", currency: "IDR", confidence: 98 },
+        invoiceNumber: { value: "INV-001", confidence: 91 },
+      },
+      screening: {
+        screeningStatus: "FLAGGED",
+        flagCodes: ["LOW_CONFIDENCE_DATE"],
+      },
+    },
+  ],
+  verification: {
+    verificationStatus: "VERIFIED",
+    reviewedAt: "2026-10-04T12:34:56.789Z",
+    verifierRef: "opaque-verifier-ref",
+  },
+  proofVersion: 1,
+};
+
+test("canonicalizes a schema version 2 peer-quorum package with a stable hash", () => {
+  assert.equal(
+    hashProofPackage(quorumFixture),
+    "783f39f73a962c03af80e7b3e3a47bca658872db00e37088bf99038607ac3b20",
+  );
+});
+
+test("schema version 2 normalizes chain references to lowercase hex", () => {
+  const normalized = normalizeProofPackage(structuredClone(quorumFixture));
+  assert.equal(normalized.schemaVersion, 2);
+  assert.equal(normalized.quorum.reviewRef, `0x${"a".repeat(64)}`);
+  assert.equal(normalized.quorum.contractAddress, `0x${"b".repeat(40)}`);
+  assert.equal(normalized.quorum.transactionHash, `0x${"c".repeat(64)}`);
+  assert.equal(normalized.quorum.blockNumber, 5432100);
+});
+
+test("schema version 2 rejects a quorum that disagrees with the verification outcome", () => {
+  const mismatch = structuredClone(quorumFixture);
+  mismatch.quorum.decision = "REJECTED";
+  assert.throws(() => hashProofPackage(mismatch));
+});
+
+test("schema version 2 rejects an unknown quorum decision", () => {
+  const unknownDecision = structuredClone(quorumFixture);
+  unknownDecision.quorum.decision = "APPROVED";
+  unknownDecision.verification.verificationStatus = "APPROVED";
+  assert.throws(() => hashProofPackage(unknownDecision));
+});
+
+test("schema version 2 rejects zero, malformed, or missing chain references", () => {
+  const zeroReviewRef = structuredClone(quorumFixture);
+  zeroReviewRef.quorum.reviewRef = `0x${"0".repeat(64)}`;
+  assert.throws(() => hashProofPackage(zeroReviewRef));
+
+  const zeroTransaction = structuredClone(quorumFixture);
+  zeroTransaction.quorum.transactionHash = `0x${"0".repeat(64)}`;
+  assert.throws(() => hashProofPackage(zeroTransaction));
+
+  const zeroAddress = structuredClone(quorumFixture);
+  zeroAddress.quorum.contractAddress = `0x${"0".repeat(40)}`;
+  assert.throws(() => hashProofPackage(zeroAddress));
+
+  const shortHash = structuredClone(quorumFixture);
+  shortHash.quorum.transactionHash = "0xabc";
+  assert.throws(() => hashProofPackage(shortHash));
+
+  const badBlock = structuredClone(quorumFixture);
+  badBlock.quorum.blockNumber = -1;
+  assert.throws(() => hashProofPackage(badBlock));
+
+  const badRound = structuredClone(quorumFixture);
+  badRound.quorum.roundNumber = 0;
+  assert.throws(() => hashProofPackage(badRound));
+
+  const missingQuorum = structuredClone(quorumFixture);
+  delete missingQuorum.quorum;
+  assert.throws(() => hashProofPackage(missingQuorum));
+
+  const extraQuorumKey = structuredClone(quorumFixture);
+  extraQuorumKey.quorum.reviewerCount = 3;
+  assert.throws(() => hashProofPackage(extraQuorumKey));
+});
+
+test("schema version 2 requires the package to be created at or after human review", () => {
+  const tooEarly = structuredClone(quorumFixture);
+  tooEarly.createdAt = "2026-10-04T12:00:00.000Z";
+  assert.throws(() => hashProofPackage(tooEarly));
+});
+
+test("legacy schema version 1 packages still hash to the documented vector", () => {
+  assert.equal(
+    hashProofPackage(structuredClone(fixture)),
+    "452d8c79872337735b6a0bc8957bae4b4d5931058b1f64fd9fea5efd05365bbf",
+  );
 });

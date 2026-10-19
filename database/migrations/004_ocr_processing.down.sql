@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS ocr_jobs;
+DROP TABLE IF EXISTS ai_flags;
+DROP TABLE IF EXISTS ocr_runs;

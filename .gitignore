@@ -10,6 +10,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 coverage/
+.local/
+.playwright-mcp/
 .env
 .env.*
 !.env.example

@@ -1,0 +1,111 @@
+{
+  "contractName": "ProofAnchor",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "initialRelayer",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "EXPECT_ALREADY_ANCHORED",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EXPECT_INVALID_COMMITMENT",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EXPECT_INVALID_PROOF_ID",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EXPECT_INVALID_RELAYER",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EXPECT_RELAYER_ONLY",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "proofId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ProofAnchored",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "proofId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
+        }
+      ],
+      "name": "anchorProof",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "proofCommitments",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "relayer",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x60a0604052348015600e575f5ffd5b506040516102ce3803806102ce833981016040819052602b916061565b6001600160a01b0381166051576040516326f510c160e21b815260040160405180910390fd5b6001600160a01b0316608052608c565b5f602082840312156070575f5ffd5b81516001600160a01b03811681146085575f5ffd5b9392505050565b6080516102256100a95f395f81816048015260d401526102255ff3fe608060405234801561000f575f5ffd5b506004361061003f575f3560e01c80638406c079146100435780638a3eb0c114610087578063d09ba3581461009c575b5f5ffd5b61006a7f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b0390911681526020015b60405180910390f35b61009a6100953660046101b8565b6100c9565b005b6100bb6100aa3660046101d8565b5f6020819052908152604090205481565b60405190815260200161007e565b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146101125760405163118965c760e11b815260040160405180910390fd5b8161013057604051636c71acb760e01b815260040160405180910390fd5b8061014e576040516320dd174d60e11b815260040160405180910390fd5b5f828152602081905260409020541561017a576040516333c2fa3360e01b815260040160405180910390fd5b5f8281526020819052604080822083905551829184917fc422c0b2924cb12962ff8216a5f8074d70c6878cf361dcd3096673a728f1ab129190a35050565b5f5f604083850312156101c9575f5ffd5b50508035926020909101359150565b5f602082840312156101e8575f5ffd5b503591905056fea2646970667358221220f0524659775b998182f9263b626da75243cdecd31102e6642f2cb2b322a7191364736f6c63430008250033"
+}

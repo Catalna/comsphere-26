@@ -6,6 +6,8 @@ const LANGUAGES = new Set(["id", "en", "mixed", "unknown"]);
 const SCREENING_STATES = new Set(["CLEAR", "FLAGGED", "FAILED"]);
 const VERIFICATION_STATES = new Set(["VERIFIED", "NEEDS_REVISION", "REJECTED"]);
 const HASH_PATTERN = /^[0-9a-f]{64}$/i;
+const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
+const TRANSACTION_PATTERN = /^0x[0-9a-fA-F]{64}$/;
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -53,6 +55,22 @@ function sha256Hex(value, path, { nullable = false } = {}) {
   const result = text(value, path);
   if (!HASH_PATTERN.test(result)) invalid(path, "expected a 64-character SHA-256 hex string");
   return result.toLowerCase();
+}
+
+function hexBytes32(value, path) {
+  const result = text(value, path);
+  if (!TRANSACTION_PATTERN.test(result)) invalid(path, "expected 0x followed by 32 bytes of hex");
+  const normalized = result.toLowerCase();
+  if (/^0x0+$/.test(normalized)) invalid(path, "a zero value is not a valid commitment");
+  return normalized;
+}
+
+function hexAddress(value, path) {
+  const result = text(value, path);
+  if (!ADDRESS_PATTERN.test(result)) invalid(path, "expected 0x followed by 20 bytes of hex");
+  const normalized = result.toLowerCase();
+  if (/^0x0+$/.test(normalized)) invalid(path, "the zero address is not a valid contract reference");
+  return normalized;
 }
 
 function integer(value, path, { minimum = 0, maximum = Number.MAX_SAFE_INTEGER } = {}) {
@@ -166,13 +184,30 @@ function normalizeFile(input, path) {
   };
 }
 
+const SCHEMA_1_PACKAGE_KEYS = [
+  "schemaVersion", "campaignId", "milestoneId", "evidenceVersion", "createdAt",
+  "files", "verification", "proofVersion",
+];
+const SCHEMA_2_PACKAGE_KEYS = [
+  "schemaVersion", "campaignId", "milestoneId", "evidenceVersion", "createdAt",
+  "quorum", "files", "verification", "proofVersion",
+];
+
+function normalizeQuorum(input, path) {
+  exactKeys(input, ["reviewRef", "roundNumber", "decision", "contractAddress", "transactionHash", "blockNumber"], path);
+  return {
+    reviewRef: hexBytes32(input.reviewRef, `${path}.reviewRef`),
+    roundNumber: integer(input.roundNumber, `${path}.roundNumber`, { minimum: 1 }),
+    decision: enumValue(input.decision, VERIFICATION_STATES, `${path}.decision`),
+    contractAddress: hexAddress(input.contractAddress, `${path}.contractAddress`),
+    transactionHash: hexBytes32(input.transactionHash, `${path}.transactionHash`),
+    blockNumber: integer(input.blockNumber, `${path}.blockNumber`, { minimum: 0 }),
+  };
+}
+
 export function normalizeProofPackage(input) {
-  exactKeys(input, [
-    "schemaVersion", "campaignId", "milestoneId", "evidenceVersion", "createdAt",
-    "files", "verification", "proofVersion",
-  ], "package");
-  if (input.schemaVersion !== 1) invalid("schemaVersion", "only schema version 1 is supported");
-  if (!Array.isArray(input.files) || input.files.length === 0) invalid("files", "expected at least one evidence file");
+  const schemaVersion = integer(input?.schemaVersion, "schemaVersion", { minimum: 1, maximum: 2 });
+  if (!Array.isArray(input?.files) || input.files.length === 0) invalid("files", "expected at least one evidence file");
   if (input.files.length > MAX_FILES) invalid("files", `maximum is ${MAX_FILES}`);
   exactKeys(input.verification, ["verificationStatus", "reviewedAt", "verifierRef"], "verification");
 
@@ -185,19 +220,36 @@ export function normalizeProofPackage(input) {
   const reviewedAt = timestamp(input.verification.reviewedAt, "verification.reviewedAt");
   const createdAt = timestamp(input.createdAt, "createdAt");
   if (Date.parse(createdAt) < Date.parse(reviewedAt)) invalid("createdAt", "package must be created at or after human review");
+  const verificationStatus = enumValue(input.verification.verificationStatus, VERIFICATION_STATES, "verification.verificationStatus");
 
+  if (schemaVersion === 1) {
+    exactKeys(input, SCHEMA_1_PACKAGE_KEYS, "package");
+    return {
+      schemaVersion: 1,
+      campaignId: identifier(input.campaignId, "campaignId"),
+      milestoneId: identifier(input.milestoneId, "milestoneId"),
+      evidenceVersion: integer(input.evidenceVersion, "evidenceVersion", { minimum: 1 }),
+      createdAt,
+      files,
+      verification: { verificationStatus, reviewedAt, verifierRef: identifier(input.verification.verifierRef, "verification.verifierRef") },
+      proofVersion: integer(input.proofVersion, "proofVersion", { minimum: 1 }),
+    };
+  }
+
+  exactKeys(input, SCHEMA_2_PACKAGE_KEYS, "package");
+  const quorum = normalizeQuorum(input.quorum, "quorum");
+  if (quorum.decision !== verificationStatus) {
+    invalid("quorum.decision", "the quorum decision must match the verification status");
+  }
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     campaignId: identifier(input.campaignId, "campaignId"),
     milestoneId: identifier(input.milestoneId, "milestoneId"),
     evidenceVersion: integer(input.evidenceVersion, "evidenceVersion", { minimum: 1 }),
     createdAt,
+    quorum,
     files,
-    verification: {
-      verificationStatus: enumValue(input.verification.verificationStatus, VERIFICATION_STATES, "verification.verificationStatus"),
-      reviewedAt,
-      verifierRef: identifier(input.verification.verifierRef, "verification.verifierRef"),
-    },
+    verification: { verificationStatus, reviewedAt, verifierRef: identifier(input.verification.verifierRef, "verification.verifierRef") },
     proofVersion: integer(input.proofVersion, "proofVersion", { minimum: 1 }),
   };
 }
