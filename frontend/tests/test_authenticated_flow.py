@@ -130,7 +130,14 @@ def sign_in(page, email, password):
     # Hydration can exceed the 5s default on a loaded machine (parallel builds); tolerate 15s.
     expect(page.get_by_role("button", name="Masuk")).to_be_enabled(timeout=15_000)
     page.get_by_role("button", name="Masuk").click()
-    page.get_by_role("heading", name="Review saya" if email in {VERIFIER_EMAIL, SECOND_VERIFIER_EMAIL, THIRD_VERIFIER_EMAIL} else "Campaign saya").wait_for(state="visible")
+    # Landing mengikuti peran: VERIFIER -> Review saya, ADMIN -> Operasi Review, lainnya -> Dashboard.
+    if email in {VERIFIER_EMAIL, SECOND_VERIFIER_EMAIL, THIRD_VERIFIER_EMAIL}:
+        expected_heading = "Review saya"
+    elif email == ADMIN_EMAIL:
+        expected_heading = "Operasi Review"
+    else:
+        expected_heading = "Program Overview"
+    page.get_by_role("heading", name=expected_heading).wait_for(state="visible")
     if email != ADMIN_EMAIL:
         assert page.get_by_role("link", name="Pengguna").count() == 0
 

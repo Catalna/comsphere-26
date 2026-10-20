@@ -39,7 +39,13 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       const requestedPath = new URLSearchParams(window.location.search).get("next");
-      const defaultPath = response.user.role === "VERIFIER" ? "/verifier/reviews" : "/campaigns";
+      const roleDefaults: Record<string, string> = {
+        ADMIN: "/admin/reviews",
+        ORGANIZER: "/dashboard",
+        FUNDER: "/dashboard",
+        VERIFIER: "/verifier/reviews",
+      };
+      const defaultPath = roleDefaults[response.user.role] ?? "/campaigns";
       const nextPath = requestedPath?.startsWith("/") && !requestedPath.startsWith("//") ? requestedPath : defaultPath;
       router.replace(nextPath);
     } catch (cause) {

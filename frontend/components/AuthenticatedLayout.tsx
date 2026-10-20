@@ -18,12 +18,12 @@ import {
   LogOut,
   Menu,
   X,
-  Search,
-  Bell,
 } from "lucide-react";
 
 import { requestJson } from "../lib/api";
 import { useCurrentUser, type UserSummary } from "../lib/useCurrentUser";
+import WorkspaceSearch from "./WorkspaceSearch";
+import WorkspaceAlerts from "./WorkspaceAlerts";
 
 const WorkspaceUserContext = createContext<UserSummary | null>(null);
 
@@ -175,6 +175,38 @@ export default function AuthenticatedLayout({
 
           {/* Navigation Items (DesignUI.md - Section 5 & 6) */}
           <nav className="workspace-nav" aria-label="Navigasi utama">
+            {/* Admin Role Nav — di atas supaya selalu terlihat tanpa scroll (peran ADMIN) */}
+            {isAdminUser && (
+              <>
+                <div className="nav-section-label nav-section-label--admin">Manajemen Admin</div>
+                <Link
+                  href="/admin/reviews"
+                  className={`workspace-nav-item ${navItem(pathname, "/admin/reviews") ? "workspace-nav-item--active" : ""}`}
+                  aria-current={navItem(pathname, "/admin/reviews") ? "page" : undefined}
+                >
+                  <BadgeCheck size={18} className="nav-icon" aria-hidden="true" />
+                  <span className="nav-label">Operasi review</span>
+                </Link>
+                <Link
+                  href="/admin/users"
+                  className={`workspace-nav-item ${navItem(pathname, "/admin/users") ? "workspace-nav-item--active" : ""}`}
+                  aria-current={navItem(pathname, "/admin/users") ? "page" : undefined}
+                >
+                  <Users size={18} className="nav-icon" aria-hidden="true" />
+                  <span className="nav-label">Pengguna</span>
+                </Link>
+                <Link
+                  href="/admin/campaigns"
+                  className={`workspace-nav-item ${navItem(pathname, "/admin/campaigns") ? "workspace-nav-item--active" : ""}`}
+                  aria-current={navItem(pathname, "/admin/campaigns") ? "page" : undefined}
+                >
+                  <Globe2 size={18} className="nav-icon" aria-hidden="true" />
+                  <span className="nav-label">Publikasi audit</span>
+                </Link>
+                <div className="nav-divider" />
+              </>
+            )}
+
             {/* Non-Verifier Main Nav */}
             {!isVerifier && (
               <>
@@ -278,38 +310,6 @@ export default function AuthenticatedLayout({
                 </Link>
               </>
             )}
-
-            {/* Admin Role Extra Nav */}
-            {isAdminUser && (
-              <>
-                <div className="nav-divider" />
-                <div className="nav-section-label">Manajemen Admin</div>
-                <Link
-                  href="/admin/reviews"
-                  className={`workspace-nav-item ${navItem(pathname, "/admin/reviews") ? "workspace-nav-item--active" : ""}`}
-                  aria-current={navItem(pathname, "/admin/reviews") ? "page" : undefined}
-                >
-                  <BadgeCheck size={18} className="nav-icon" aria-hidden="true" />
-                  <span className="nav-label">Operasi review</span>
-                </Link>
-                <Link
-                  href="/admin/users"
-                  className={`workspace-nav-item ${navItem(pathname, "/admin/users") ? "workspace-nav-item--active" : ""}`}
-                  aria-current={navItem(pathname, "/admin/users") ? "page" : undefined}
-                >
-                  <Users size={18} className="nav-icon" aria-hidden="true" />
-                  <span className="nav-label">Pengguna</span>
-                </Link>
-                <Link
-                  href="/admin/campaigns"
-                  className={`workspace-nav-item ${navItem(pathname, "/admin/campaigns") ? "workspace-nav-item--active" : ""}`}
-                  aria-current={navItem(pathname, "/admin/campaigns") ? "page" : undefined}
-                >
-                  <Globe2 size={18} className="nav-icon" aria-hidden="true" />
-                  <span className="nav-label">Publikasi audit</span>
-                </Link>
-              </>
-            )}
           </nav>
 
           {/* Sidebar Bottom Footer (Section 5) */}
@@ -354,24 +354,8 @@ export default function AuthenticatedLayout({
             </div>
 
             <div className="top-header-right">
-              <div className="top-search-bar" role="search">
-                <Search size={15} className="top-search-icon" aria-hidden="true" />
-                <input
-                  type="search"
-                  className="top-search-input"
-                  placeholder="SEARCH..."
-                  aria-label="Cari global"
-                />
-              </div>
-              <button
-                type="button"
-                className="top-icon-btn"
-                aria-label="Notifikasi program"
-                title="Notifikasi"
-              >
-                <Bell size={16} aria-hidden="true" />
-                <span className="top-notification-dot" aria-hidden="true" />
-              </button>
+              <WorkspaceSearch user={user} />
+              <WorkspaceAlerts user={user} />
               <div className="top-user-avatar-box" title={user.name}>
                 {user.name.slice(0, 2).toUpperCase()}
               </div>

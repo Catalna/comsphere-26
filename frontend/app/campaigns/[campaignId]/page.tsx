@@ -164,7 +164,9 @@ export default function CampaignDetailPage() {
         (milestone) => evidenceResponses[milestoneResponse.milestones.indexOf(milestone)]?.evidence ?? [],
       );
       const proofEntries = await Promise.all(
-        allEvidence.map(async (item) => [item.id, await fetchProofForEvidence(item.id)] as const),
+        allEvidence
+          .filter((item) => item.verificationStatus === "VERIFIED")
+          .map(async (item) => [item.id, await fetchProofForEvidence(item.id)] as const),
       );
       setProofByEvidence(Object.fromEntries(proofEntries));
     } catch {
